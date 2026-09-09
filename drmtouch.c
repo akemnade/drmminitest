@@ -132,9 +132,10 @@ static bool draw_touch(void *data, int drm_fd, uint32_t conn_id, drmModeModeInfo
 {
 	struct drm_draw_data *drdata = (struct drm_draw_data *)data;
 	static struct drm_buf bufs;
-	unsigned short x;
-	unsigned short y;
+	unsigned short x = 0;
+	unsigned short y = 0;
 	uint32_t pen_color = 0xffffff;
+	bool have_abs = false;
 
 	uint32_t width = mode->hdisplay;
 	uint32_t height = mode->vdisplay;
@@ -184,7 +185,6 @@ static bool draw_touch(void *data, int drm_fd, uint32_t conn_id, drmModeModeInfo
 	unsigned int slots_used = 0;
 
 	while(1) {
-		bool have_abs;
 		struct input_event iev;
 		int i;
 		struct pollfd pfd = {
