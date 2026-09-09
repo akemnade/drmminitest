@@ -127,6 +127,7 @@ static int translate_abs(int val, struct input_absinfo *absi, int target)
 	return val;
 }
 
+static bool found;
 static bool draw_touch(void *data, int drm_fd, uint32_t conn_id, drmModeModeInfo *mode, uint32_t crtc_id)
 {
 	struct drm_draw_data *drdata = (struct drm_draw_data *)data;
@@ -147,7 +148,7 @@ static bool draw_touch(void *data, int drm_fd, uint32_t conn_id, drmModeModeInfo
 		.minimum = 0,
 		.maximum = (int)height
 	};
-
+	found = true;
 	ioctl(drdata->ifd, EVIOCGABS(0), &absx);
 	ioctl(drdata->ifd, EVIOCGABS(1), &absy);
 	printf("x: min: %d max: %d\n", absx.minimum, absx.maximum);
@@ -272,7 +273,6 @@ static bool draw_touch(void *data, int drm_fd, uint32_t conn_id, drmModeModeInfo
 int main(int argc, char **argv)
 {
 	struct drm_draw_data drdata = {0};
-	bool found;
 	int i;
 
 	for(i = 1; i < argc; i++) {
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	found = search_drm(draw_touch, &drdata);
+	search_drm(draw_touch, &drdata);
 	if (!found) {
 		fprintf(stderr, "no suitable output found\n");
 		return 1;

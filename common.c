@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2026 Andreas Kemnade
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,14 +61,13 @@ static bool check_connector(int fd, drmModeResPtr res,
 	if (!crtc_id)
 		return false;
 
-	func(data, fd, conn->connector_id, &conn->modes[0], crtc_id);
-	return true;
+	return ! func(data, fd, conn->connector_id, &conn->modes[0], crtc_id);
 }
 
 static bool check_drm_dev(int fd, drm_found_func_t func, void *data)
 {
 	int i;
-	bool found = false;
+	bool stop_search = false;
 	drmModeConnectorPtr conn = NULL;
 
 	drmModeResPtr res = drmModeGetResources(fd);
@@ -80,15 +79,15 @@ static bool check_drm_dev(int fd, drm_found_func_t func, void *data)
 		if (!conn)
 			continue;
 
-		found = check_connector(fd, res, conn, func, data);
+		stop_search = check_connector(fd, res, conn, func, data);
 		drmModeFreeConnector(conn);
 
-		if (found)
+		if (stop_search)
 			break;
 	}
 
 	drmModeFreeResources(res);
-	return found;
+	return stop_search;
 }
 
 void create_dumb_buffer(int drm_fd, struct drm_buf *b, uint32_t width, uint32_t height, uint32_t bpp)
@@ -154,11 +153,11 @@ static void page_flip_handler(int fd, unsigned int, unsigned int, unsigned int, 
 	pageflip_done = 1;
 }
 
-bool search_drm(drm_found_func_t func, void *data)
+void search_drm(drm_found_func_t func, void *data)
 {
 	int i;
 	int drm_fd;
-	bool found;
+	bool stop_search;
 
 	for(i = 0; i < 32; i++) {
 		char buf[64];
@@ -174,11 +173,12 @@ bool search_drm(drm_found_func_t func, void *data)
 
 		printf("Name: %s\n", version->name);
 
-		found = check_drm_dev(drm_fd, func, data);
+		stop_search = check_drm_dev(drm_fd, func, data);
 
 		close(drm_fd);
 		drm_fd = -1;
+		if (stop_search)
+			continue;
 	}
-	return found;
 }
 

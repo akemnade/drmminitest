@@ -67,6 +67,7 @@ static void draw_qr(struct drm_buf *buf, QRcode *qr)
 
 static struct drm_buf bufs[10];
 static int bufnum;
+static bool found;
 
 static bool draw_qr_code(void *data, int fd, uint32_t conn_id, drmModeModeInfo *mode, uint32_t crtc_id)
 {
@@ -76,7 +77,11 @@ static bool draw_qr_code(void *data, int fd, uint32_t conn_id, drmModeModeInfo *
 	uint32_t width = mode->hdisplay;
 	uint32_t height = mode->vdisplay;
 
-	create_dumb_buffer(fd, bufs, width, height, 32);
+	found = true;
+	if (bufnum >= sizeof(bufs) / sizeof(bufs[0]))
+		return false;
+
+	create_dumb_buffer(fd, buf, width, height, 32);
 	/* initial draw */
 	bufnum++;
 
@@ -84,7 +89,7 @@ static bool draw_qr_code(void *data, int fd, uint32_t conn_id, drmModeModeInfo *
 	if(!qr)
 		return true;
 
-	draw_qr(bufs, qr);
+	draw_qr(buf, qr);
 
 	if (drmModeSetCrtc(fd, crtc_id, buf->fb, 0, 0, &conn_id, 1, mode))
 		fprintf(stderr, "failed to drmModeSetCrtc on %d/%d", conn_id, crtc_id);
@@ -93,7 +98,6 @@ static bool draw_qr_code(void *data, int fd, uint32_t conn_id, drmModeModeInfo *
 }
 
 int main(int argc, char **argv) {
-	bool found;
 	struct drm_draw_data drdata = {};
 
 	if(!argv[1]) {
@@ -103,7 +107,7 @@ int main(int argc, char **argv) {
 
 	drdata.qrcode = argv[1];
 
-	found = search_drm(draw_qr_code, &drdata);
+	search_drm(draw_qr_code, &drdata);
 
 	if (!found)
 		fprintf(stderr, "no suitable output found");

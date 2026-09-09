@@ -16,6 +16,6 @@ struct drm_buf {
 	uint32_t width, height;
 };
 
-bool search_drm(drm_found_func_t func, void *data);
+void search_drm(drm_found_func_t func, void *data);
 void create_dumb_buffer(int drm_fd, struct drm_buf *b, uint32_t width, uint32_t height, uint32_t bpp);
 void destroy_dumb_buffer(int drm_fd, struct drm_buf *b);
